@@ -8,10 +8,8 @@ exige una salida exacta — es una prueba de comportamiento, no un snapshot.
 
 from __future__ import annotations
 
-import os
-
 import pytest
-from helpers import load_agent_module
+from helpers import live_o_skip, load_agent_module
 
 from nucleo_core import Task
 
@@ -25,15 +23,9 @@ CASOS = [
 ]
 
 
-def _activa() -> bool:
-    return os.environ.get("RUN_LIVE_EVAL") == "1"
-
-
 @pytest.mark.parametrize("texto,categorias_ok,urgencia_esp", CASOS)
 async def test_clasificacion_en_vivo(texto, categorias_ok, urgencia_esp):
-    if not _activa():
-        pytest.skip("define RUN_LIVE_EVAL=1 y levanta el stack para correr la eval")
-
+    live_o_skip()
     agente = load_agent_module("peticiones-ciudadanas").PeticionesAgent()
     res = await agente.handle(Task(tipo="clasificar", payload={"texto": texto}))
 

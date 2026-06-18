@@ -12,9 +12,20 @@ import os
 import pathlib
 from types import ModuleType
 
+import pytest
+
 from nucleo_core import LLMResponse
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+def live_o_skip() -> None:
+    """Salta la prueba salvo que se pida explícitamente correr la eval en vivo.
+
+    Las evals en vivo gastan tokens y necesitan el stack arriba; son opt-in.
+    """
+    if os.environ.get("RUN_LIVE_EVAL") != "1":
+        pytest.skip("define RUN_LIVE_EVAL=1 y levanta el stack para la eval en vivo")
 
 
 def load_agent_module(slug: str) -> ModuleType:
