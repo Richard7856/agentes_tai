@@ -101,6 +101,15 @@ services:
     ports: ["8104:8000"]
     depends_on: [orchestrator, llm-gateway, ocr]
 
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    environment:
+      ORCH_URL: ${ORCH_URL}
+    ports: ["3000:3000"]
+    depends_on: [orchestrator]
+
   n8n:
     image: n8nio/n8n:latest
     environment:
