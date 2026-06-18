@@ -53,6 +53,16 @@ Ver agentes registrados en el orquestador:
 curl -s localhost:8001/agents | jq
 ```
 
+## Pruebas
+
+```bash
+pip install -e libs/core -r requirements-dev.txt
+pytest                       # unitarias deterministas (gateway falso, sin API key)
+
+# Eval de comportamiento contra Claude real (requiere stack arriba):
+RUN_LIVE_EVAL=1 GATEWAY_URL=http://localhost:8000 pytest -m live
+```
+
 ## Estructura
 
 Ver `CLAUDE.md` → "Estructura del repo".
