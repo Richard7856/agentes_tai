@@ -1,0 +1,28 @@
+# Overlay Fase 2 — levanta Ollama y conmuta el gateway a inferencia local.
+# Uso: docker compose -f docker-compose.yml -f docker-compose.ollama.yml up
+#
+# Recordatorio: cambiar también LLM_PROVIDER=ollama en .env (ADR-001).
+# El servidor on-premise y su GPU se dimensionan en esta fase (ver docs/fases.md).
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama
+    ports: ["11434:11434"]
+    # GPU: descomentar cuando el host tenga drivers NVIDIA + container toolkit.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  llm-gateway:
+    environment:
+      LLM_PROVIDER: ollama
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_models: {}
