@@ -2,64 +2,83 @@
 
 Diagramas en Mermaid (se renderizan en GitHub). Pensados para explicar el
 sistema a quien se integre al equipo: cómo se comunican los agentes, dónde entra
-el RAG, qué está hecho y qué falta.
+el RAG, cómo entran los roles, qué está hecho y qué falta.
 
-> Lectura rápida: el **orquestador** reparte trabajo a los **agentes**; los
-> agentes piensan a través del **llm-gateway** (único punto de modelos) y
-> consultan el **RAG** (pgvector). El **dashboard** presenta todo. **n8n** es la
-> capa no-code que dispara flujos. La frontera de **soberanía** separa lo
-> on-premise de la API externa de Claude (hoy) → Ollama local (mañana).
+> **TL;DR.** En **producción** todo corre en un **servidor privado con IA local
+> (Ollama)** y el dato **no sale**. **Claude se usa solo en desarrollo** con datos
+> sintéticos. Los usuarios entran por el **tablero**, filtrados por **roles
+> (RBAC)**. El **orquestador** reparte trabajo a los **agentes**; los agentes
+> piensan vía el **llm-gateway** (único punto de modelos) y consultan el **RAG**
+> (recuperación sobre pgvector). **n8n** es la capa no-code que alimenta el
+> sistema. **El RAG no entrena el modelo**: busca y entrega fragmentos en el
+> momento de cada pregunta.
+
+**Leyenda:** 🟦 IA local (Ollama) · 🟨 externo, solo desarrollo (Claude) ·
+🟩 hecho · 🟥 pendiente · ⬛ datos (pgvector).
 
 ---
 
-## 1. Solución completa (visión Fase 1)
+## 1. Solución completa (producción: IA local + roles)
 
 ```mermaid
 flowchart TB
-    U["Despacho / Gobernadora<br/>(usuarios)"] --> DASH["Dashboard<br/>Next.js + TS"]
+    U["Gobernadora · Secretaría Particular · Equipo del despacho"]
+    RBAC["Identidad y Roles · RBAC<br/>quién entra y qué ve"]
+    DASH["Dashboard único"]
+    U --> RBAC --> DASH
 
-    subgraph CORE["Entorno institucional · on-premise / nube privada"]
-        DASH -->|"REST · patrón BFF"| ORCH["Orquestador<br/>FastAPI · registro dinámico"]
-        ORCH -->|"despacha por slug"| A1["Agente<br/>Agenda"]
-        ORCH --> A2["Agente<br/>Peticiones"]
-        ORCH --> A3["Agente<br/>Pendientes"]
-        ORCH --> A4["Agente<br/>Acuerdos"]
+    subgraph PRIV["Servidor privado · datacenter MX · el dato NO sale"]
+        ORCH["Orquestador"]
+        A1["Agenda"]
+        A2["Peticiones"]
+        A3["Pendientes"]
+        A4["Acuerdos"]
+        GW["llm-gateway<br/>único punto de modelos"]
+        OLL["Ollama · IA local<br/>1 modelo compartido"]
+        RAG["Recuperación RAG"]
+        PG[("PostgreSQL<br/>+ pgvector")]
+        N8N["n8n · no-code"]
+        OCR["OCR local"]
+        ING["Ingesta · chunk + embed"]
 
-        A1 & A2 & A3 & A4 -->|"/v1/complete + /v1/embed"| GW["llm-gateway<br/>único punto de modelos"]
-        A1 & A4 -->|"recupera contexto"| RAG["Recuperación RAG"]
-        RAG --> PG[("PostgreSQL<br/>+ pgvector")]
-
+        DASH -->|"REST · BFF"| ORCH
+        ORCH -->|"reparte por agente"| A1
+        ORCH --> A2
+        ORCH --> A3
+        ORCH --> A4
+        A1 --> GW
+        A2 --> GW
+        A3 --> GW
+        A4 --> GW
+        GW --> OLL
+        A1 --> RAG
+        A4 --> RAG
+        RAG --> PG
         ORCH --> PG
-        GW -->|"auditoría de llamadas"| PG
-
-        N8N["n8n<br/>flujos no-code"] -->|"dispara tareas"| ORCH
-        OCR["OCR on-prem<br/>Tesseract/PaddleOCR"] --> ING["Ingesta<br/>chunk + embed"]
+        GW -->|"auditoría"| PG
+        N8N --> ORCH
+        OCR --> ING
         ING --> PG
-        ING -->|"embeddings"| GW
     end
 
-    F1["Carga manual<br/>formularios"] --> N8N
-    F2["Google Workspace<br/>calendario / correo"] --> N8N
+    F1["Formularios / WhatsApp"] --> N8N
+    F2["Google / Outlook Calendar"] --> N8N
     F3["PDFs escaneados"] --> OCR
 
-    GW -.->|"HOY · datos sintéticos"| CLAUDE["Claude API<br/>claude-opus-4-8"]
-    GW -->|"MAÑANA · on-prem"| OLLAMA["Ollama local<br/>llama / qwen"]
+    GW -.->|"SOLO en desarrollo · datos sintéticos"| CLAUDE["Claude API · externo"]
 
-    classDef ext fill:#fef9c3,stroke:#ca8a04,color:#713f12;
-    class CLAUDE ext;
-    classDef local fill:#e0e7ff,stroke:#6366f1,color:#312e81;
-    class OLLAMA local;
+    classDef dev fill:#fef9c3,stroke:#ca8a04,stroke-dasharray:5 5,color:#713f12;
+    class CLAUDE dev;
+    classDef brain fill:#e0e7ff,stroke:#6366f1,color:#312e81;
+    class OLL brain;
 ```
 
-**Lo clave para la nueva integrante:**
-- Los agentes **nunca** se llaman entre sí ni llaman al modelo directo. Todo pasa
-  por el **orquestador** (coordinación) y el **gateway** (modelos). Eso permite
-  sumar agentes sin rediseñar (4 → 10).
-- El **RAG no es una herramienta no-code**: es parte del núcleo IA. Vive sobre
-  **pgvector** (la misma BD), y los embeddings se calculan **on-prem** en el
-  gateway. Por eso el corpus documental no sale del entorno.
-- **n8n es la capa no-code** y alimenta al sistema (intake de formularios,
-  Google Workspace, disparadores por tiempo); **no reemplaza a los agentes**.
+**Claves:**
+- El cerebro de producción es **Ollama local** (azul). **Claude** (amarillo
+  punteado) es **solo desarrollo**: no forma parte de lo entregado.
+- **Una sola** instalación de Ollama, **compartida** por los 4 agentes (y los 10
+  después) a través del gateway. No es una por agente.
+- Entre los usuarios y el tablero hay un **filtro de roles (RBAC)**.
 
 ---
 
@@ -69,30 +88,51 @@ flowchart TB
 flowchart TB
     DASH["Dashboard: Resumen + Peticiones"]:::ok
     ORCH["Orquestador: registro + dispatch"]:::ok
-    GW["llm-gateway: proveedor Claude /v1/complete"]:::ok
+    GW["llm-gateway: proveedor pluggable (Claude hoy)"]:::ok
     A2["Agente Peticiones (completo)"]:::ok
     A134["Agentes Agenda/Pendientes/Acuerdos (stubs)"]:::ok
     PG[("Postgres: esquema 10 agentes + seed")]:::ok
-    TESTS["Pruebas unitarias + evals de los 4 agentes"]:::ok
+    TESTS["Pruebas + evals de los 4 agentes"]:::ok
 
+    ROLES["Roles / RBAC activos (login + permisos)"]:::falta
+    OLL["Ollama local + validación de los agentes"]:::falta
     EMBED["/v1/embed + RAG (recuperación)"]:::falta
-    INGEST["Ingesta + chunking"]:::falta
-    OCRR["OCR real (Tesseract/PaddleOCR)"]:::falta
-    N8NF["Flujos n8n (intake, Google, semáforos)"]:::falta
-    GAUTH["Auth RBAC en el tablero"]:::falta
-    AUDIT["Persistir llm_audit en BD"]:::falta
-    PROD["Despliegue a producción (AWS)"]:::falta
-    OLL["Migración a Ollama"]:::falta
+    INGEST["Ingesta + chunking + OCR real"]:::falta
+    N8NF["n8n: formularios, WhatsApp, Google/Outlook, semáforos"]:::falta
+    AUDIT["Persistir auditoría llm_audit"]:::falta
+    PROD["Despliegue en servidor privado"]:::falta
 
     classDef ok fill:#d1fae5,stroke:#10b981,color:#064e3b;
     classDef falta fill:#fee2e2,stroke:#ef4444,stroke-dasharray:4 4,color:#7f1d1d;
 ```
 
-🟩 verde = hecho y verificado · 🟥 rojo punteado = pendiente.
+🟩 hecho y verificado · 🟥 pendiente.
 
 ---
 
-## 3. Flujo que YA funciona — clasificar una petición
+## 3. Roles — quién ve qué (RBAC)
+
+```mermaid
+flowchart LR
+    G["Gobernadora"] --> T["Tablero completo<br/>los 4 módulos · todo"]
+    SP["Secretaría Particular"] --> T
+    OA["Operador · Agenda"] --> MA["Solo módulo Agenda"]
+    OP["Operador · Peticiones"] --> MP["Solo módulo Peticiones"]
+
+    NOTA["El RBAC filtra en 3 niveles:<br/>1) qué módulos ve · 2) qué registros ve · 3) qué documentos recupera el RAG"]
+
+    classDef nota fill:#f1f5f9,stroke:#94a3b8,color:#334155;
+    class NOTA nota;
+```
+
+> **No todo va para todos.** La Gobernadora y Secretaría Particular ven todo;
+> los operadores ven solo su módulo. El RBAC también **filtra el RAG**: cada rol
+> recupera únicamente documentos permitidos. Las tablas ya existen en la BD
+> (`usuarios`, `roles`, `permisos`); falta activarlas (no es rediseño).
+
+---
+
+## 4. Flujo que YA funciona — clasificar una petición
 
 ```mermaid
 sequenceDiagram
@@ -101,23 +141,26 @@ sequenceDiagram
     participant O as Orquestador
     participant Ag as Agente Peticiones
     participant G as llm-gateway
-    participant C as Claude
+    participant M as Modelo (Ollama en prod · Claude en dev)
 
     Op->>D: Escribe la petición ciudadana
     D->>O: POST /agents/peticiones-ciudadanas/dispatch
     O->>Ag: /handle {tipo: clasificar}
     Ag->>G: /v1/complete (prompt + texto)
-    G->>C: messages.create (claude-opus-4-8)
-    C-->>G: JSON {categoria, urgencia, ...}
+    G->>M: genera
+    M-->>G: JSON {categoria, urgencia, ...}
     G-->>Ag: respuesta + tokens
     Ag-->>O: {folio, clasificación}
     O-->>D: resultado
     D-->>Op: Folio + urgencia + dependencia sugerida
 ```
 
+> El flujo es idéntico en desarrollo y producción; **solo cambia el cerebro**
+> detrás del gateway (Claude → Ollama).
+
 ---
 
-## 4. Flujo que FALTA — ficha de reunión con RAG
+## 5. Flujo del RAG — ficha de reunión (no entrena, recupera)
 
 ```mermaid
 sequenceDiagram
@@ -125,52 +168,45 @@ sequenceDiagram
     participant G as llm-gateway (/v1/embed)
     participant PG as pgvector
     participant Ag as Agente Agenda
-    participant C as Claude
+    participant M as Modelo local (Ollama)
 
-    note over ING,PG: Ingesta (una vez por documento)
+    note over ING,PG: Ingesta (una vez por documento · NO es entrenamiento)
     ING->>G: embed(fragmentos del documento)
     G-->>ING: vectores
     ING->>PG: guarda chunks + embeddings
 
-    note over Ag,C: Consulta (al preparar la ficha)
+    note over Ag,M: Consulta (al preparar la ficha)
     Ag->>G: embed("antecedentes de la reunión X")
     G-->>Ag: vector de consulta
-    Ag->>PG: búsqueda top-k por similitud
-    PG-->>Ag: fragmentos relevantes
+    Ag->>PG: búsqueda top-k (filtrada por rol)
+    PG-->>Ag: solo los fragmentos relevantes y permitidos
     Ag->>G: /v1/complete (prompt + fragmentos)
-    G->>C: genera la ficha
-    C-->>Ag: ficha con antecedentes citados
+    G->>M: genera la ficha
+    M-->>Ag: ficha con antecedentes citados
 ```
 
 ---
 
-## 5. Despliegue en producción (AWS)
-
-Ver `docs/produccion.md` para el detalle. Resumen visual:
+## 6. Despliegue en producción — nube privada + IA local
 
 ```mermaid
 flowchart TB
-    subgraph AWS["Cuenta AWS (host de los contenedores)"]
-        ALB["Application Load Balancer"] --> DASHc["Dashboard (ECS/Fargate)"]
-        ALB --> ORCHc["Orquestador (ECS)"]
-        ORCHc --> AGc["Agentes x4 (ECS)"]
-        AGc --> GWc["llm-gateway (ECS)"]
-        AGc --> RDS[("RDS PostgreSQL<br/>+ pgvector")]
-        GWc --> RDS
-        N8Nc["n8n (ECS)"] --> ORCHc
-        SM["Secrets Manager<br/>ANTHROPIC_API_KEY, BD"] --> GWc
-        ECR["ECR (imágenes)"] -.-> AGc
+    subgraph SRV["Servidor privado dedicado · 1 GPU · datacenter en México"]
+        APPS["Orquestador + 4 agentes + gateway<br/>tablero + n8n + OCR"]
+        OLL["Ollama · IA local<br/>1 modelo compartido"]
+        PGC[("PostgreSQL + pgvector<br/>BD + archivero RAG")]
+        APPS --> OLL
+        APPS --> PGC
     end
 
-    GWc -.->|"hoy"| CLAUDE["Claude API"]
-    GWc -->|"mañana"| GPU["EC2/GPU o servidor on-prem<br/>Ollama"]
+    USERS["Despacho<br/>(con roles)"] -->|"Tailscale · red privada"| SRV
 
-    classDef ext fill:#fef9c3,stroke:#ca8a04;
-    class CLAUDE ext;
+    NOTA["Nada sale del servidor · sin costo por tokens.<br/>AWS solo como PILOTO con datos sintéticos (Camino B en docs/produccion.md)."]
+
+    classDef nota fill:#f1f5f9,stroke:#94a3b8,color:#334155;
+    class NOTA nota;
 ```
 
-> **La arquitectura es cloud-agnóstica:** los mismos contenedores corren en un
-> EC2 con `docker compose` (rápido) o en ECS/Fargate (escalable). AWS es el
-> *dónde*, no cambia el *qué*. La frontera de soberanía (ADR-001/002) se respeta
-> igual: con datos reales, el `llm-gateway` apunta a Ollama y el corpus RAG
-> permanece en la BD.
+> **Un** servidor, **un** Ollama, **una** BD. Los 4 agentes comparten todo eso;
+> crecer a 10 = más capacidad en el mismo servidor, no más cerebros.
+> La frontera de soberanía se cumple: en producción el cómputo de IA es **local**.
