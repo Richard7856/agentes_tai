@@ -1,4 +1,5 @@
 import AgentRunner from "@/components/AgentRunner";
+import AcuerdosTable from "@/components/sample/AcuerdosTable";
 
 export default function AcuerdosPage() {
   return (
@@ -9,6 +10,7 @@ export default function AcuerdosPage() {
           Extrae los acuerdos de un acta o minuta: responsable, compromiso y fecha.
         </p>
       </header>
+
       <AgentRunner
         slug="control-acuerdos"
         tipo="extraer_acuerdos"
@@ -18,6 +20,13 @@ export default function AcuerdosPage() {
         example="Minuta del 3 de marzo. La Secretaría de Salud, a través de Juan Pérez, se comprometió a entregar el informe de cobertura el 15 de agosto. La Secretaría de Obras dará seguimiento al avance del acueducto."
         buttonLabel="Extraer acuerdos"
       />
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Acuerdos en seguimiento · datos de muestra
+        </h2>
+        <AcuerdosTable />
+      </section>
     </div>
   );
 }

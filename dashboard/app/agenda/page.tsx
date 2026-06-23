@@ -1,4 +1,5 @@
 import AgentRunner from "@/components/AgentRunner";
+import AgendaList from "@/components/sample/AgendaList";
 
 export default function AgendaPage() {
   return (
@@ -10,6 +11,7 @@ export default function AgendaPage() {
           temas sensibles y posibles acuerdos.
         </p>
       </header>
+
       <AgentRunner
         slug="agenda-reuniones"
         tipo="preparar_ficha"
@@ -19,6 +21,13 @@ export default function AgendaPage() {
         example="Reunión con alcaldes sobre seguridad y la obra hídrica del acueducto"
         buttonLabel="Preparar ficha"
       />
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Próximas reuniones · datos de muestra
+        </h2>
+        <AgendaList />
+      </section>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import AgentRunner from "@/components/AgentRunner";
+import PendientesMatrix from "@/components/sample/PendientesMatrix";
 
 export default function PendientesPage() {
   return (
@@ -10,6 +11,7 @@ export default function PendientesPage() {
           hacer, planear, delegar o eliminar.
         </p>
       </header>
+
       <AgentRunner
         slug="pendientes-prioridades"
         tipo="priorizar"
@@ -19,6 +21,13 @@ export default function PendientesPage() {
         example="Atender ahora mismo una emergencia sanitaria que exige decisión inmediata de la Gobernadora"
         buttonLabel="Priorizar"
       />
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Matriz del despacho · datos de muestra
+        </h2>
+        <PendientesMatrix />
+      </section>
     </div>
   );
 }

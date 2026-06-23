@@ -1,4 +1,5 @@
 import PeticionForm from "@/components/PeticionForm";
+import FoliosTable from "@/components/sample/FoliosTable";
 
 export default function PeticionesPage() {
   return (
@@ -9,7 +10,15 @@ export default function PeticionesPage() {
           Clasifica, folía y sugiere dependencia para una solicitud ciudadana.
         </p>
       </header>
+
       <PeticionForm />
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Folios recientes · datos de muestra
+        </h2>
+        <FoliosTable />
+      </section>
     </div>
   );
 }

@@ -1,6 +1,16 @@
 import Link from "next/link";
 import AgentCard from "@/components/AgentCard";
 import { getAgents } from "@/lib/api";
+import { FOLIOS, ACUERDOS, REUNIONES, MATRIZ } from "@/lib/sampleData";
+
+// Indicadores de muestra para que el resumen se vea "en operación".
+const KPIS = [
+  { label: "Folios recientes", value: FOLIOS.length, color: "text-indigo-600" },
+  { label: "Acuerdos en seguimiento", value: ACUERDOS.length, color: "text-emerald-600" },
+  { label: "Acuerdos vencidos", value: ACUERDOS.filter((a) => a.semaforo === "rojo").length, color: "text-red-600" },
+  { label: "Reuniones con ficha", value: REUNIONES.filter((r) => r.fichaLista).length, color: "text-slate-700" },
+  { label: "Pendientes 'hacer ya'", value: MATRIZ.hacer.length, color: "text-amber-600" },
+];
 
 // slug del agente → ruta de su módulo en el tablero.
 const RUTA: Record<string, string> = {
@@ -23,6 +33,15 @@ export default async function ResumenPage() {
           solicitud del tablero se enruta por él.
         </p>
       </header>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        {KPIS.map((k) => (
+          <div key={k.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
+            <p className="mt-1 text-xs text-slate-500">{k.label}</p>
+          </div>
+        ))}
+      </div>
 
       <div className="mb-6 rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
         🧭 Orquestador activo · <b>{agents.length}</b> agente(s) registrado(s).
