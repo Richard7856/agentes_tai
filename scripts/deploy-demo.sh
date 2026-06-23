@@ -15,16 +15,18 @@ if grep -q 'ANTHROPIC_API_KEY=sk-ant-\.\.\.' .env || ! grep -q '^ANTHROPIC_API_K
 fi
 
 MODE="${1:-ip}"
+# La demo NO necesita n8n (la automatización entra en la Fase 1 completa).
+# --scale n8n=0 evita levantarlo (más ligero; tu VPS ya tiene otro n8n).
 if [ "$MODE" = "https" ] || [ "$MODE" = "--https" ]; then
   echo "🚀 Desplegando con HTTPS + login (Caddy)…"
   echo "   Verifica: DEMO_DOMAIN apunta a este servidor y DEMO_PASSWORD_HASH está puesto."
-  docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+  docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build --scale n8n=0
   echo "✅ Listo → https://$(grep '^DEMO_DOMAIN=' .env | cut -d= -f2)"
   echo "   Abre SOLO los puertos 80 y 443 en el firewall."
 else
   port="$(grep '^DASHBOARD_PORT=' .env | cut -d= -f2)"; port="${port:-3000}"
   echo "🚀 Desplegando en modo IP directa (solo el tablero, puerto ${port})…"
-  docker compose up -d --build
+  docker compose up -d --build --scale n8n=0
   echo "✅ Listo → http://<IP_DEL_VPS>:${port}"
   echo "   Abre el puerto ${port} en el firewall."
 fi
