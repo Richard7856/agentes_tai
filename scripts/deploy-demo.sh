@@ -22,10 +22,11 @@ if [ "$MODE" = "https" ] || [ "$MODE" = "--https" ]; then
   echo "✅ Listo → https://$(grep '^DEMO_DOMAIN=' .env | cut -d= -f2)"
   echo "   Abre SOLO los puertos 80 y 443 en el firewall."
 else
-  echo "🚀 Desplegando en modo IP directa (puerto 3000)…"
+  port="$(grep '^DASHBOARD_PORT=' .env | cut -d= -f2)"; port="${port:-3000}"
+  echo "🚀 Desplegando en modo IP directa (solo el tablero, puerto ${port})…"
   docker compose up -d --build
-  echo "✅ Listo → http://<IP_DEL_VPS>:3000"
-  echo "   Abre el puerto 3000 en el firewall."
+  echo "✅ Listo → http://<IP_DEL_VPS>:${port}"
+  echo "   Abre el puerto ${port} en el firewall."
 fi
 
 echo "-----------------------------------------"

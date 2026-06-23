@@ -1,0 +1,22 @@
+# Override SOLO para desarrollo local: re-expone puertos de servicios internos
+# en 127.0.0.1 para depurar (curl localhost:8101, etc.). NO usar en VPS compartido.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  postgres:
+    ports: ["127.0.0.1:5432:5432"]
+  llm-gateway:
+    ports: ["127.0.0.1:8000:8000"]
+  orchestrator:
+    ports: ["127.0.0.1:8001:8000"]
+  ocr:
+    ports: ["127.0.0.1:8002:8000"]
+  agent-peticiones:
+    ports: ["127.0.0.1:8101:8000"]
+  agent-agenda:
+    ports: ["127.0.0.1:8102:8000"]
+  agent-pendientes:
+    ports: ["127.0.0.1:8103:8000"]
+  agent-acuerdos:
+    ports: ["127.0.0.1:8104:8000"]
+  n8n:
+    ports: ["127.0.0.1:5678:5678"]

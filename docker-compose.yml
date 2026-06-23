@@ -1,5 +1,12 @@
 # Infraestructura base — Fase 1 (4 agentes, sin Ollama).
-# Para Fase 2: `docker compose -f docker-compose.yml -f docker-compose.ollama.yml up`
+# Nombre de proyecto fijo → contenedores/volúmenes/red namespaced como `nucleo_*`
+# para no chocar con otros proyectos del mismo host.
+# Solo el TABLERO publica puerto al host (configurable con DASHBOARD_PORT).
+# El resto de servicios hablan por la red interna; NO se exponen (más seguro en VPS compartido).
+# Para depurar en local con puertos: añade `-f docker-compose.dev.yml`.
+# Para Fase 2 (Ollama): añade `-f docker-compose.ollama.yml`.
+name: nucleo
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -11,7 +18,6 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./db/migrations:/docker-entrypoint-initdb.d/10-migrations:ro
       - ./db/seed:/docker-entrypoint-initdb.d/20-seed:ro
-    ports: ["5432:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_DB}"]
       interval: 5s
@@ -30,7 +36,6 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL}
       LLM_REDACT_PII: ${LLM_REDACT_PII}
       DATABASE_URL: ${DATABASE_URL}
-    ports: ["8000:8000"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,7 +46,6 @@ services:
       dockerfile: services/orchestrator/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    ports: ["8001:8000"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,9 +54,8 @@ services:
     build:
       context: .
       dockerfile: services/ocr/Dockerfile
-    ports: ["8002:8000"]
 
-  # ── Agentes Fase 1 (puertos 8101-8104) ────────────────────────────────
+  # ── Agentes Fase 1 ────────────────────────────────────────────────────
   agent-peticiones:
     build:
       context: .
@@ -62,7 +65,6 @@ services:
       ORCH_URL: ${ORCH_URL}
       DATABASE_URL: ${DATABASE_URL}
       SELF_URL: http://agent-peticiones:8000
-    ports: ["8101:8000"]
     depends_on: [orchestrator, llm-gateway]
 
   agent-agenda:
@@ -74,7 +76,6 @@ services:
       ORCH_URL: ${ORCH_URL}
       DATABASE_URL: ${DATABASE_URL}
       SELF_URL: http://agent-agenda:8000
-    ports: ["8102:8000"]
     depends_on: [orchestrator, llm-gateway]
 
   agent-pendientes:
@@ -86,7 +87,6 @@ services:
       ORCH_URL: ${ORCH_URL}
       DATABASE_URL: ${DATABASE_URL}
       SELF_URL: http://agent-pendientes:8000
-    ports: ["8103:8000"]
     depends_on: [orchestrator, llm-gateway]
 
   agent-acuerdos:
@@ -98,7 +98,6 @@ services:
       ORCH_URL: ${ORCH_URL}
       DATABASE_URL: ${DATABASE_URL}
       SELF_URL: http://agent-acuerdos:8000
-    ports: ["8104:8000"]
     depends_on: [orchestrator, llm-gateway, ocr]
 
   dashboard:
@@ -107,7 +106,8 @@ services:
       dockerfile: Dockerfile
     environment:
       ORCH_URL: ${ORCH_URL}
-    ports: ["3000:3000"]
+    # Único puerto publicado al host. Cambia DASHBOARD_PORT si 3000 está ocupado.
+    ports: ["${DASHBOARD_PORT:-3000}:3000"]
     depends_on: [orchestrator]
 
   n8n:
@@ -119,7 +119,6 @@ services:
       DB_POSTGRESDB_DATABASE: ${PG_DB}
       DB_POSTGRESDB_USER: ${PG_USER}
       DB_POSTGRESDB_PASSWORD: ${PG_PASSWORD}
-    ports: ["5678:5678"]
     depends_on:
       postgres:
         condition: service_healthy
