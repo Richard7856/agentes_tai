@@ -1,0 +1,10 @@
+# Proxy de la demo: HTTPS automático (Let's Encrypt) + login básico.
+# Las variables se inyectan desde .env vía docker-compose.demo.yml.
+{$DEMO_DOMAIN} {
+	# Puerta de acceso para que la demo no sea pública (protege el recibo de Claude).
+	basic_auth {
+		{$DEMO_USER} {$DEMO_PASSWORD_HASH}
+	}
+	# El tablero es el único servicio expuesto; el resto queda en la red interna.
+	reverse_proxy dashboard:3000
+}

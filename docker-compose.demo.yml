@@ -1,0 +1,27 @@
+# Overlay de DEMO en producción: pone el tablero detrás de un proxy con HTTPS
+# automático y login básico. La demo usa Claude como cerebro (datos sintéticos);
+# producción real conmuta a Ollama local (ver docs/arquitectura.md).
+#
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DEMO_DOMAIN: ${DEMO_DOMAIN}
+      DEMO_USER: ${DEMO_USER}
+      DEMO_PASSWORD_HASH: ${DEMO_PASSWORD_HASH}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - dashboard
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}

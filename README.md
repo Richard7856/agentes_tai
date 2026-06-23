@@ -66,7 +66,8 @@ RUN_LIVE_EVAL=1 GATEWAY_URL=http://localhost:8000 pytest -m live
 ## Documentación
 
 - `docs/arquitectura.md` — diagramas (solución completa, estado actual, flujos, despliegue).
-- `docs/produccion.md` — cómo subir a producción (AWS) y puerta de soberanía.
+- `docs/demo-deploy.md` — montar la DEMO en producción (VM + Docker, rápido).
+- `docs/produccion.md` — producción real (nube privada / IA local) y puerta de soberanía.
 - `docs/reparto-actividades.md` — roles y reparto de trabajo del equipo.
 - `docs/rag.md` — plan de RAG (propuesta).
 - `docs/fases.md` — fases del proyecto.
