@@ -4,7 +4,10 @@ import Link from "next/link";
 // generar desde el registro en una iteración posterior.
 const NAV = [
   { href: "/", label: "Resumen" },
+  { href: "/agenda", label: "Agenda y Reuniones" },
   { href: "/peticiones", label: "Peticiones Ciudadanas" },
+  { href: "/pendientes", label: "Pendientes y Prioridades" },
+  { href: "/acuerdos", label: "Control de Acuerdos" },
 ];
 
 export default function Sidebar() {
