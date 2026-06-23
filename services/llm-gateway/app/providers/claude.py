@@ -27,7 +27,8 @@ class ClaudeProvider(LLMProvider):
         kwargs: dict = {
             "model": self.model,
             "max_tokens": req.max_tokens,
-            "thinking": {"type": "adaptive"},
+            # display=summarized → devuelve un resumen legible del razonamiento.
+            "thinking": {"type": "adaptive", "display": "summarized"},
             "messages": [m.model_dump() for m in req.messages],
         }
         if req.system:
@@ -36,10 +37,14 @@ class ClaudeProvider(LLMProvider):
         resp = await self.client.messages.create(**kwargs)
 
         text = "".join(b.text for b in resp.content if b.type == "text")
+        reasoning = "".join(
+            b.thinking for b in resp.content if b.type == "thinking"
+        ).strip() or None
         return LLMResponse(
             text=text,
             proveedor=self.nombre,
             modelo=self.model,
             tokens_in=resp.usage.input_tokens,
             tokens_out=resp.usage.output_tokens,
+            reasoning=reasoning,
         )

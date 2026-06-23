@@ -72,6 +72,7 @@ class PeticionesAgent(BaseAgent):
                 "clasificacion": clasificacion,
                 "modelo": resp.modelo,
                 "proveedor": resp.proveedor,
+                "razonamiento": resp.reasoning,
             }
         )
 

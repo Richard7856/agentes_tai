@@ -5,6 +5,7 @@ import Link from "next/link";
 const NAV = [
   { href: "/", label: "Resumen" },
   { href: "/orquestador", label: "Orquestador" },
+  { href: "/monitoreo", label: "Monitoreo (en vivo)" },
   { href: "/agenda", label: "Agenda y Reuniones" },
   { href: "/peticiones", label: "Peticiones Ciudadanas" },
   { href: "/pendientes", label: "Pendientes y Prioridades" },

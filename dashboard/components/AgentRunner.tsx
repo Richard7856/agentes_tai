@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import FlowTimeline from "@/components/FlowTimeline";
 
 interface Props {
   slug: string;
   tipo: string;
   inputLabel: string;
   placeholder: string;
-  payloadKey: string; // llave del payload que espera el agente (ej. "texto", "tema")
+  payloadKey: string;
   example: string;
   buttonLabel?: string;
+  usaRag?: boolean;
 }
 
 interface Result {
@@ -18,8 +20,8 @@ interface Result {
   error: string | null;
 }
 
-// Componente reutilizable: manda una tarea al orquestador y muestra el resultado.
-// Lo usan los módulos de Agenda, Pendientes y Acuerdos (Peticiones tiene su vista propia).
+// Manda una tarea al orquestador, muestra el flujo de trabajo, el razonamiento
+// real del modelo y el resultado.
 export default function AgentRunner({
   slug,
   tipo,
@@ -28,6 +30,7 @@ export default function AgentRunner({
   payloadKey,
   example,
   buttonLabel = "Procesar con el agente",
+  usaRag = false,
 }: Props) {
   const [text, setText] = useState(example);
   const [loading, setLoading] = useState(false);
@@ -53,34 +56,43 @@ export default function AgentRunner({
 
   const data = result?.ok ? result.data : null;
   const modelo = data?.modelo ? String(data.modelo) : "";
-  const entries = data ? Object.entries(data).filter(([k]) => k !== "modelo") : [];
+  const razonamiento = data?.razonamiento ? String(data.razonamiento) : "";
+  const entries = data
+    ? Object.entries(data).filter(([k]) => !["modelo", "razonamiento"].includes(k))
+    : [];
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <form
-        onSubmit={onSubmit}
-        className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
-      >
-        <label className="block text-sm font-medium text-slate-700">{inputLabel}</label>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={6}
-          placeholder={placeholder}
-          className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+      <div>
+        <form
+          onSubmit={onSubmit}
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
         >
-          {loading ? "Procesando…" : buttonLabel}
-        </button>
-        <p className="mt-2 text-xs text-slate-400">
-          Enrutado por el orquestador → agente{" "}
-          <span className="font-mono">{slug}</span> · datos sintéticos
-        </p>
-      </form>
+          <label className="block text-sm font-medium text-slate-700">{inputLabel}</label>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={6}
+            placeholder={placeholder}
+            className="mt-2 w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {loading ? "Procesando…" : buttonLabel}
+          </button>
+          <p className="mt-2 text-xs text-slate-400">
+            Enrutado por el orquestador → agente{" "}
+            <span className="font-mono">{slug}</span> · datos sintéticos
+          </p>
+        </form>
+
+        {(loading || result) && (
+          <FlowTimeline loading={loading} done={!!result?.ok} usaRag={usaRag} />
+        )}
+      </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-slate-700">Resultado</h3>
@@ -90,6 +102,18 @@ export default function AgentRunner({
         {result && !result.ok && (
           <p className="mt-3 text-sm text-red-600">Error: {result.error}</p>
         )}
+
+        {razonamiento && (
+          <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              🧠 Cómo pensó el agente
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-indigo-900">
+              {razonamiento}
+            </p>
+          </div>
+        )}
+
         {data && (
           <div className="mt-3 space-y-3 text-sm">
             {entries.map(([k, v]) => {

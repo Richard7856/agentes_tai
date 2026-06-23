@@ -30,7 +30,9 @@ class AcuerdosAgent(BaseAgent):
         if task.tipo == "extraer_acuerdos":
             texto = (task.payload or {}).get("texto", "")
             r = await self.llm.complete(system=_SYSTEM, user=texto)
-            return Result(data={"acuerdos": r.text, "modelo": r.modelo})
+            return Result(
+                data={"acuerdos": r.text, "modelo": r.modelo, "razonamiento": r.reasoning}
+            )
         return Result(ok=False, error=f"tipo no soportado: {task.tipo}")
 
 

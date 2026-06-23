@@ -30,7 +30,9 @@ class AgendaAgent(BaseAgent):
         if task.tipo == "preparar_ficha":
             tema = (task.payload or {}).get("tema", "reunión de trabajo")
             r = await self.llm.complete(system=_SYSTEM, user=f"Reunión sobre: {tema}")
-            return Result(data={"ficha_borrador": r.text, "modelo": r.modelo})
+            return Result(
+                data={"ficha_borrador": r.text, "modelo": r.modelo, "razonamiento": r.reasoning}
+            )
         return Result(ok=False, error=f"tipo no soportado: {task.tipo}")
 
 

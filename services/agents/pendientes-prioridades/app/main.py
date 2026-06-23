@@ -28,8 +28,14 @@ class PendientesAgent(BaseAgent):
     async def handle(self, task: Task) -> Result:
         if task.tipo == "priorizar":
             texto = (task.payload or {}).get("texto", "")
-            r = await self.llm.complete(system=_SYSTEM, user=texto, max_tokens=32)
-            return Result(data={"cuadrante": r.text.strip().lower(), "modelo": r.modelo})
+            r = await self.llm.complete(system=_SYSTEM, user=texto, max_tokens=512)
+            return Result(
+                data={
+                    "cuadrante": r.text.strip().lower(),
+                    "modelo": r.modelo,
+                    "razonamiento": r.reasoning,
+                }
+            )
         return Result(ok=False, error=f"tipo no soportado: {task.tipo}")
 
 

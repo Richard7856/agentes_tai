@@ -19,6 +19,7 @@ export default function AcuerdosPage() {
         placeholder="Pega aquí el acta…"
         example="Minuta del 3 de marzo. La Secretaría de Salud, a través de Juan Pérez, se comprometió a entregar el informe de cobertura el 15 de agosto. La Secretaría de Obras dará seguimiento al avance del acueducto."
         buttonLabel="Extraer acuerdos"
+        usaRag
       />
 
       <section className="mt-10">

@@ -20,6 +20,7 @@ export default function AgendaPage() {
         placeholder="Ej. reunión con alcaldes sobre seguridad"
         example="Reunión con alcaldes sobre seguridad y la obra hídrica del acueducto"
         buttonLabel="Preparar ficha"
+        usaRag
       />
 
       <section className="mt-10">

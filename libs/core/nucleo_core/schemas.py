@@ -61,3 +61,5 @@ class LLMResponse(BaseModel):
     modelo: str
     tokens_in: int = 0
     tokens_out: int = 0
+    # Resumen del razonamiento del modelo (para mostrar "cómo piensa" el agente).
+    reasoning: str | None = None
