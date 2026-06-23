@@ -4,6 +4,7 @@ import Link from "next/link";
 // generar desde el registro en una iteración posterior.
 const NAV = [
   { href: "/", label: "Resumen" },
+  { href: "/orquestador", label: "Orquestador" },
   { href: "/agenda", label: "Agenda y Reuniones" },
   { href: "/peticiones", label: "Peticiones Ciudadanas" },
   { href: "/pendientes", label: "Pendientes y Prioridades" },
