@@ -26,7 +26,7 @@ async def test_extrae_datos_clave_en_vivo():
     res = await agente.handle(Task(tipo="extraer_acuerdos", payload={"texto": ACTA}))
 
     assert res.ok, res.error
-    salida = str(res.data["acuerdos"]).lower()
+    salida = str(res.data["extraccion"]["acuerdos"]).lower()
 
     # Responsable identificado (nombre o dependencia).
     assert "juan" in salida or "salud" in salida, salida

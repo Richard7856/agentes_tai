@@ -10,9 +10,13 @@ const EJEMPLO = "No hay agua en mi colonia hace 5 días, vivo en Tepic";
 interface Clasificacion {
   categoria?: string;
   urgencia?: string;
+  justificacion_urgencia?: string;
   municipio?: string | null;
   dependencia_sugerida?: string;
+  justificacion_dependencia?: string;
   resumen?: string;
+  acuse_ciudadano?: string;
+  accion_recomendada?: string;
 }
 
 export default function PeticionForm() {
@@ -118,9 +122,36 @@ export default function PeticionForm() {
             <Row label="Dependencia sugerida" value={clasificacion.dependencia_sugerida ?? "—"} />
             <Row label="Resumen" value={clasificacion.resumen ?? "—"} />
             <Row label="Modelo" value={String(result.data.modelo ?? "—")} mono />
+
+            {clasificacion.justificacion_urgencia && (
+              <Nota titulo="Por qué esa urgencia" texto={clasificacion.justificacion_urgencia} />
+            )}
+            {clasificacion.justificacion_dependencia && (
+              <Nota titulo="Por qué esa dependencia" texto={clasificacion.justificacion_dependencia} />
+            )}
+            {clasificacion.accion_recomendada && (
+              <Nota titulo="Acción recomendada" texto={clasificacion.accion_recomendada} />
+            )}
+            {clasificacion.acuse_ciudadano && (
+              <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  ✉️ Acuse al ciudadano (borrador)
+                </p>
+                <p className="mt-1 text-sm text-emerald-900">{clasificacion.acuse_ciudadano}</p>
+              </div>
+            )}
           </dl>
         )}
       </div>
+    </div>
+  );
+}
+
+function Nota({ titulo, texto }: { titulo: string; texto: string }) {
+  return (
+    <div className="pt-1">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{titulo}</p>
+      <p className="mt-0.5 text-sm text-slate-700">{texto}</p>
     </div>
   );
 }

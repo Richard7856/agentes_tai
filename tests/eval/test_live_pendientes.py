@@ -29,5 +29,5 @@ async def test_cuadrante_en_vivo(texto, esperados):
     res = await agente.handle(Task(tipo="priorizar", payload={"texto": texto}))
 
     assert res.ok, res.error
-    cuadrante = str(res.data["cuadrante"]).lower()
+    cuadrante = str(res.data["evaluacion"]["cuadrante"]).lower()
     assert any(e in cuadrante for e in esperados), f"cuadrante inesperado: {cuadrante}"

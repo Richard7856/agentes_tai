@@ -27,7 +27,8 @@ async def test_ficha_cubre_secciones_en_vivo():
     res = await agente.handle(Task(tipo="preparar_ficha", payload={"tema": TEMA}))
 
     assert res.ok, res.error
-    ficha = str(res.data["ficha_borrador"]).lower()
+    # La ficha ahora es estructurada (JSON); la serializamos para validar contenido.
+    ficha = str(res.data["ficha"]).lower()
 
     presentes = [s for s in SECCIONES if s in ficha]
     assert len(presentes) >= 3, f"faltan secciones, solo: {presentes}"

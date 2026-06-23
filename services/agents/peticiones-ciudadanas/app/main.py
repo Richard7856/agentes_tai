@@ -15,15 +15,19 @@ from datetime import datetime, timezone
 from nucleo_core import BaseAgent, GatewayClient, Result, Task, build_agent_app
 
 # Prompt de sistema: define el trabajo del modelo y el formato de salida.
-_SYSTEM = """Eres un analista del despacho de gobierno que clasifica peticiones
+_SYSTEM = """Eres un analista del despacho de gobierno que procesa peticiones
 ciudadanas. Dada una petición en texto libre, responde ÚNICAMENTE con un objeto
 JSON válido, sin texto adicional, con estas llaves:
 - categoria: una de [agua, salud, seguridad, obras, educacion, tramites, otro]
 - urgencia: una de [baja, media, alta]
+- justificacion_urgencia: string, por qué esa urgencia
 - municipio: nombre del municipio si se menciona, o null
 - dependencia_sugerida: dependencia estatal que debería atenderla
+- justificacion_dependencia: string, por qué esa dependencia
 - resumen: una frase breve de la petición
-"""
+- acuse_ciudadano: 1-2 frases de respuesta cordial al ciudadano confirmando recepción
+- accion_recomendada: string, el siguiente paso concreto del despacho
+Contexto: estado de Nayarit (Tepic, Xalisco, Bahía de Banderas, etc.)."""
 
 
 def _extraer_json(texto: str) -> dict:
@@ -59,7 +63,7 @@ class PeticionesAgent(BaseAgent):
 
         # sensibilidad="sintetico": datos de prueba, sin redacción (ADR-002).
         resp = await self.llm.complete(
-            system=_SYSTEM, user=texto, sensibilidad="sintetico", max_tokens=1024
+            system=_SYSTEM, user=texto, sensibilidad="sintetico", max_tokens=1536
         )
         try:
             clasificacion = _extraer_json(resp.text)
